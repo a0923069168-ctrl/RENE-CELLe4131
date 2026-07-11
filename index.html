@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RENE CELL 客戶管理系統</title>
+
+<!-- 加到主畫面（偽 App）相關設定 -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#345B31">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RENE CELL">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5FAF3;
+    --surface:#FFFFFF;
+    --surface-alt:#E7F2E2;
+    --accent:#8FBF83;
+    --accent-deep:#345B31;
+    --text-primary:#162616;
+    --text-secondary:#465C42;
+    --border:#D6E5CF;
+    --status-active:#6F9B67;
+    --status-wait:#9AAF6C;
+    --status-cancel:#B08585;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text-primary);
+    font-family:'Noto Sans TC',sans-serif;
+    min-height:100vh;
+    padding-bottom:60px;
+    position:relative;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:url("bg.jpg") center / cover no-repeat;
+    opacity:.12;
+    pointer-events:none;
+    z-index:0;
+  }
+  body > *{
+    position:relative;
+    z-index:1;
+  }
+  header{
+    padding:36px 24px 20px;
+    text-align:center;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+  }
+  header .brand{
+    font-family:'Noto Serif TC',serif;
+    font-weight:600;
+    font-size:12px;
+    letter-spacing:3px;
+    color:var(--text-secondary);
+  }
+  header .sub{
+    font-family:'Noto Serif TC',serif;
+    font-size:26px;
+    font-weight:600;
+    letter-spacing:4px;
+    color:var(--accent-deep);
+    margin-top:6px;
+  }
+ nav{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:12px;
+  width:calc(100% - 64px);
+  max-width:1180px;
+  margin:0 auto;
+  background:rgba(255,255,255,.88);
+  border-bottom:none;
+  padding:16px 0;
+  }
+ nav button{
+  background:rgba(255,255,255,.76);
+  border:1px solid var(--border);
+  min-height:58px;
+  padding:0 18px;
+  font-family:'Noto Serif TC',serif;
+  font-size:20px;
+  font-weight:600;
+  color:var(--text-secondary);
+  cursor:pointer;
+  border-radius:4px;
+  transition:all .2s;
+  letter-spacing:2px;
+  }
+  nav button.active{
+    background:var(--surface-alt);
+    color:var(--accent-deep);
+    border-color:var(--accent);
+    box-shadow:0 2px 8px rgba(139,94,77,.12);
+    font-size:21px;
+  }
+  nav button:hover{
+    color:var(--accent-deep);
+    border-color:var(--accent);
+  }
+  main{
+   max-width:1180px;
+   width:calc(100% - 64px);
+   margin:0 auto;
+   padding:32px 0 48px;
+  }
+  .page{display:none;}
+  .page.active{display:block;animation:fadeIn .3s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:20px 22px;
+    margin-bottom:14px;
+  }
+  .card-title{
+    font-family:'Noto Serif TC',serif;
+    font-size:17px;
+    font-weight:500;
+    color:var(--accent-deep);
+    margin-bottom:4px;
+  }
+  .card-meta{
+    font-size:13px;
+    color:var(--text-secondary);
+    margin-bottom:10px;
+  }
+  .badge{
+    display:inline-block;
+    font-size:11px;
+    padding:3px 10px;
+    border-radius:20px;
+    letter-spacing:1px;
+    margin-right:6px;
+  }
+  .badge.active{background:#EAEFE3;color:var(--status-active);}
+  .badge.wait{background:#F5E9DB;color:var(--status-wait);}
+  .badge.cancel{background:#F1E1E1;color:var(--status-cancel);}
+
+  .search-bar{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+  }
+  input, select, textarea{
+    font-family:'Noto Sans TC',sans-serif;
+    font-size:14px;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    background:var(--surface);
+    color:var(--text-primary);
+    width:100%;
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:none;
+    border-color:var(--accent);
+  }
+  .search-bar input{flex:1;}
+  button.primary{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:10px 22px;
+    border-radius:4px;
+    font-family:'Noto Sans TC',sans-serif;
+    font-size:14px;
+    cursor:pointer;
+    letter-spacing:1px;
+    transition:background .2s;
+  }
+  button.primary:hover{background:var(--accent-deep);}
+  button.secondary{
+    background:var(--surface);
+    color:var(--accent-deep);
+    border:1px solid var(--accent);
+    padding:10px 18px;
+    border-radius:4px;
+    font-family:'Noto Sans TC',sans-serif;
+    font-size:14px;
+    cursor:pointer;
+    letter-spacing:1px;
+  }
+  button.secondary:hover{background:var(--surface-alt);}
+
+  form .field{margin-bottom:14px;}
+  form label{
+    display:block;
+    font-size:13px;
+    color:var(--text-secondary);
+    margin-bottom:6px;
+    letter-spacing:1px;
+  }
+  .form-grid{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:18px 20px;
+}
+
+@media(max-width:900px){
+  main{width:calc(100% - 32px);}
+  .form-grid{grid-template-columns:1fr 1fr;}
+}
+
+@media(max-width:600px){
+  main{width:calc(100% - 24px);}
+  .form-grid{grid-template-columns:1fr;}
+}
+  .form-section{
+    margin:6px 0 14px;
+    padding:16px;
+    border:1px solid var(--border);
+    background:rgba(231,242,226,.48);
+  }
+  .form-section.reminder-section{
+    border-color:#DCCAA2;
+    background:#FFF8E8;
+  }
+  .form-section.reminder-section .form-section-title{
+    color:#7A6234;
+  }
+  .form-section-title{
+    font-family:'Noto Serif TC',serif;
+    font-size:16px;
+    font-weight:500;
+    color:var(--accent-deep);
+    margin-bottom:12px;
+    letter-spacing:1px;
+  }
+  .form-actions{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  .form-note{
+    color:#7A6234;
+    font-size:13px;
+    text-align:center;
+    line-height:1.7;
+    letter-spacing:1px;
+  }
+  button.calendar-button{
+    min-width:260px;
+    background:#B38A3C;
+    color:#fff;
+    border:1px solid #B38A3C;
+    padding:13px 26px;
+    box-shadow:0 4px 12px rgba(122,98,52,.18);
+  }
+  button.calendar-button:hover{
+    background:#9A7330;
+    border-color:#9A7330;
+  }
+  .date-time-row{
+    display:grid;
+    grid-template-columns:1fr 140px;
+    gap:10px;
+  }
+  @media(max-width:600px){.date-time-row{grid-template-columns:1fr;}}
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+
+  .empty-state{
+    text-align:center;
+    padding:50px 20px;
+    color:var(--text-secondary);
+  }
+  .empty-state .icon{font-size:32px;margin-bottom:10px;}
+
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--accent-deep);
+    color:#fff;
+    padding:12px 24px;
+    border-radius:4px;
+    font-size:14px;
+    opacity:0;
+    transition:opacity .3s;
+    pointer-events:none;
+    z-index:100;
+  }
+  .toast.show{opacity:1;}
+
+  .config-banner{
+    background:#F5E9DB;
+    color:var(--status-wait);
+    padding:12px 20px;
+    text-align:center;
+    font-size:13px;
+  }
+  .row-track{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+  }
+  .row-track button.small{
+    background:none;
+    border:1px solid var(--accent);
+    color:var(--accent-deep);
+    padding:6px 14px;
+    border-radius:4px;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .row-track button.small:hover{background:var(--surface-alt);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">RENE CELL</div>
+  <div class="sub">客戶管理系統</div>
+</header>
+
+<nav>
+  <button class="tab active" data-page="today">今日追蹤</button>
+  <button class="tab" data-page="search">客戶查詢</button>
+  <button class="tab" data-page="add">新增客戶</button>
+  <button class="tab" data-page="appointments">預約名單</button>
+</nav>
+
+<div id="configBanner" class="config-banner" style="display:none;">
+  尚未設定後端連線網址，請編輯本檔案中的 GAS_URL 常數
+</div>
+
+<main>
+
+  <section id="page-today" class="page active">
+    <div class="card-title" style="margin-bottom:14px;">今天需要追蹤的客戶</div>
+    <div id="todayList"></div>
+  </section>
+
+  <section id="page-search" class="page">
+    <div class="search-bar">
+      <input id="searchInput" placeholder="輸入姓名、電話或 LINE 名稱搜尋">
+      <button class="primary" onclick="doSearch()">搜尋</button>
+    </div>
+    <div id="searchResults"></div>
+  </section>
+
+  <section id="page-add" class="page">
+    <div class="card">
+      <div class="card-title">新增客戶資料</div>
+      <form id="addForm" onsubmit="submitCustomer(event)">
+        <div class="form-grid">
+          <div class="field">
+            <label>客戶姓名 *</label>
+            <input name="客戶姓名" required>
+          </div>
+          <div class="field">
+            <label>電話 *</label>
+            <input name="電話" required>
+          </div>
+          <div class="field">
+            <label>LINE名稱</label>
+            <input name="LINE名稱">
+          </div>
+          <div class="field">
+            <label>客戶來源</label>
+            <select name="客戶來源">
+              <option>FB</option><option>IG</option><option>LINE</option>
+              <option>朋友介紹</option><option>現場活動</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>負責夥伴</label>
+            <input name="負責夥伴">
+          </div>
+          <div class="field">
+            <label>客戶狀態</label>
+            <select name="客戶狀態">
+              <option>新客</option><option>已預約</option><option>已體驗</option>
+              <option>已購買</option><option>未購買</option><option>待追蹤</option><option>已取消</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>購買方案</label>
+            <select name="購買方案">
+              <option>未選擇</option>
+              <option>女神VIP保養計畫</option>
+              <option>小資試用方案</option>
+              <option>經理單</option>
+              <option>散買</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">後援人與排線資訊</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>註冊會員編號</label>
+              <input name="註冊會員編號" placeholder="可填會員編號">
+            </div>
+            <div class="field">
+              <label>後援人</label>
+              <input name="後援人" placeholder="可填姓名或會員編號">
+            </div>
+            <div class="field">
+              <label>排線</label>
+              <input name="排線" placeholder="自由填寫，不限制格式">
+            </div>
+          </div>
+        </div>
+        <div class="form-section reminder-section">
+          <div class="form-section-title">追蹤與日曆提醒</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>追蹤區分</label>
+              <select name="追蹤區分">
+                <option>未選擇</option>
+                <option>種鑽</option>
+                <option>體驗</option>
+                <option>新會員使用產品</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>開始日期</label>
+              <input type="date" name="開始日期" id="followStartDate">
+            </div>
+            <div class="field">
+              <label>第1/4/6日提醒時間</label>
+              <select name="提醒時間" id="followReminderTime">
+                <option>10:00</option>
+                <option>11:00</option>
+                <option>12:00</option>
+                <option>13:00</option>
+                <option>14:00</option>
+                <option>15:00</option>
+                <option>16:00</option>
+                <option>17:00</option>
+                <option>18:00</option>
+                <option>19:00</option>
+                <option>20:00</option>
+                <option>21:00</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>其它提醒日期時間</label>
+              <div class="date-time-row">
+  <input type="date" name="其它提醒日期">
+  <select name="其它提醒時間">
+    <option>未設定</option>
+    <option>10:00</option>
+    <option>11:00</option>
+    <option>12:00</option>
+    <option>13:00</option>
+    <option>14:00</option>
+    <option>15:00</option>
+    <option>16:00</option>
+    <option>17:00</option>
+    <option>18:00</option>
+    <option>19:00</option>
+    <option>20:00</option>
+    <option>21:00</option>
+  </select>
+</div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <div class="form-note">按下「新增客戶」後，系統會自動寫入試算表，並直接建立第1/4/6日 Google 日曆提醒（無需另外操作）</div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">預約資料</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>預約名單區分</label>
+              <select name="預約類型">
+                <option>未選擇</option>
+                <option>種鑽</option>
+                <option>卸鑽</option>
+                <option>體驗</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>預約日期</label>
+              <input type="date" name="預約日期">
+            </div>
+            <div class="field">
+              <label>預約時間</label>
+              <select name="預約時間">
+                <option>未設定</option>
+                <option>10:00</option>
+                <option>11:00</option>
+                <option>12:00</option>
+                <option>13:00</option>
+                <option>14:00</option>
+                <option>15:00</option>
+                <option>16:00</option>
+                <option>17:00</option>
+                <option>18:00</option>
+                <option>19:00</option>
+                <option>20:00</option>
+                <option>21:00</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>備註</label>
+          <textarea name="備註" rows="3"></textarea>
+        </div>
+        <button type="submit" class="primary">新增客戶</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="page-appointments" class="page">
+    <div id="appointmentList"></div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ===== 設定區：部署 GAS 後 把網址貼在這裡 ===== */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbz7MBfsW6HnS6yu56eJhwwugaH49bKfZAK64kbulTg7H4CLE7nXsS2Zq9uVu-j7tdK7Jg/exec";
+/* ============================================ */
+
+const tabs = document.querySelectorAll('nav .tab');
+const pages = document.querySelectorAll('.page');
+tabs.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    tabs.forEach(b=>b.classList.remove('active'));
+    pages.forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-'+btn.dataset.page).classList.add('active');
+    if(btn.dataset.page==='today') loadToday();
+    if(btn.dataset.page==='appointments') loadAppointments();
+  });
+});
+
+function isConfigured(){
+  return GAS_URL && GAS_URL.indexOf('http')===0;
+}
+if(!isConfigured()){
+  document.getElementById('configBanner').style.display='block';
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+async function apiGet(params){
+  if(!isConfigured()) return {ok:false, error:'尚未設定 GAS_URL'};
+  const url = GAS_URL + '?' + new URLSearchParams(params).toString();
+  const res = await fetch(url);
+  return res.json();
+}
+
+async function apiPost(body){
+  if(!isConfigured()) return {ok:false, error:'尚未設定 GAS_URL'};
+  if(location.protocol === 'file:' && (body.action === 'add' || body.action === 'updateStatus')){
+    await fetch(GAS_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(body)
+    });
+    return {ok:true, noReadback:true};
+  }
+  try{
+    const res = await fetch(GAS_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }catch(err){
+    await fetch(GAS_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(body)
+    });
+    return {ok:true, noReadback:true};
+  }
+}
+
+function statusBadge(status){
+  const map = {
+    '已購買':'active','已體驗':'active',
+    '待追蹤':'wait','新客':'wait','已預約':'wait',
+    '已取消':'cancel'
+  };
+  const cls = map[status] || 'wait';
+  return `<span class="badge ${cls}">${status||'未設定'}</span>`;
+}
+
+function formatCalendarDate(value, addMinutes=0){
+  const date = new Date(value);
+  if(Number.isNaN(date.getTime())) return '';
+  date.setMinutes(date.getMinutes() + addMinutes);
+  const pad = n => String(n).padStart(2,'0');
+  return [
+    date.getFullYear(),
+    pad(date.getMonth()+1),
+    pad(date.getDate())
+  ].join('') + 'T' + [
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    '00'
+  ].join('');
+}
+
+function combineDateTime(dateValue, timeValue){
+  if(!dateValue || !timeValue || timeValue === '未設定') return '';
+  return `${dateValue}T${timeValue}`;
+}
+
+function todayDateTime(timeValue){
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const datePart = [now.getFullYear(), pad(now.getMonth()+1), pad(now.getDate())].join('-');
+  return `${datePart}T${timeValue}`;
+}
+
+function openGoogleCalendarReminder(data){
+  if(!data){
+    const form = document.getElementById('addForm');
+    data = {};
+    new FormData(form).forEach((v,k)=>data[k]=v);
+  }
+  const now = new Date();
+  const reminderHourMinute = data['提醒時間'] || '10:00';
+  const [rh, rm] = reminderHourMinute.split(':').map(Number);
+  const reminderTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), rh, rm, 0);
+  const customerName = data['客戶姓名'] || '客戶';
+  const trackType = data['追蹤區分'] && data['追蹤區分'] !== '未選擇' ? data['追蹤區分'] : '追蹤';
+  const details = [
+    data['電話'] ? `電話：${data['電話']}` : '',
+    data['LINE名稱'] ? `LINE：${data['LINE名稱']}` : '',
+    data['購買方案'] && data['購買方案'] !== '未選擇' ? `購買方案：${data['購買方案']}` : '',
+    data['後援人'] ? `後援人：${data['後援人']}` : '',
+    data['排線'] ? `排線：${data['排線']}` : '',
+    data['備註'] ? `備註：${data['備註']}` : ''
+  ].filter(Boolean).join('\n');
+  [1,4,6].forEach(day=>{
+    const baseDate = new Date(reminderTime);
+    baseDate.setDate(baseDate.getDate() + day);
+    const start = formatCalendarDate(baseDate);
+    const end = formatCalendarDate(baseDate, 30);
+    const title = `${customerName}｜${trackType}第${day}日提醒`;
+    const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+      + '&text=' + encodeURIComponent(title)
+      + '&dates=' + encodeURIComponent(`${start}/${end}`)
+      + '&ctz=Asia%2FTaipei'
+      + '&details=' + encodeURIComponent(details);
+    window.open(url, '_blank');
+  });
+}
+
+/* ---- 今日追蹤 ---- */
+async function loadToday(){
+  const list = document.getElementById('todayList');
+  list.innerHTML = '<div class="empty-state">讀取中…</div>';
+  const res = await apiGet({action:'today'});
+  if(!res.ok){ list.innerHTML = `<div class="empty-state">${res.error||'讀取失敗'}</div>`; return; }
+  if(res.data.length===0){
+    list.innerHTML = `<div class="empty-state"><div class="icon">◇</div>今天沒有需要追蹤的客戶</div>`;
+    return;
+  }
+  list.innerHTML = res.data.map(row=>`
+    <div class="card">
+      <div class="row-track">
+        <div>
+          <div class="card-title">${row['客戶姓名']||''}</div>
+          <div class="card-meta">${row['追蹤區分']||row['追蹤類型']||''}　上次內容：${row['追蹤內容']||'—'}</div>
+          <div class="card-meta">上次反應：${row['客戶反應']||'—'}</div>
+        </div>
+        <button class="small" onclick="markDone('${row['追蹤ID']}')">標記已完成</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function markDone(id){
+  const res = await apiPost({
+    action:'updateStatus', sheet:'追蹤紀錄表',
+    idField:'追蹤ID', id:id, updates:{'是否完成':'是'}
+  });
+  if(res.ok){ showToast('已標記完成'); loadToday(); }
+  else showToast(res.error||'操作失敗');
+}
+
+/* ---- 客戶查詢 ---- */
+async function doSearch(){
+  const kw = document.getElementById('searchInput').value.trim();
+  const results = document.getElementById('searchResults');
+  results.innerHTML = '<div class="empty-state">搜尋中…</div>';
+  const res = await apiGet({action:'search', sheet:'客戶資料表', keyword:kw});
+  if(!res.ok){ results.innerHTML = `<div class="empty-state">${res.error||'搜尋失敗'}</div>`; return; }
+  if(res.data.length===0){
+    results.innerHTML = `<div class="empty-state"><div class="icon">◇</div>找不到符合的客戶</div>`;
+    return;
+  }
+  results.innerHTML = res.data.map(c=>`
+    <div class="card">
+      <div class="card-title">${c['客戶姓名']||''}</div>
+      <div class="card-meta">${c['電話']||''}　${c['LINE名稱']?'LINE：'+c['LINE名稱']:''}</div>
+      <div>${statusBadge(c['客戶狀態'])}</div>
+      <div class="card-meta" style="margin-top:8px;">來源：${c['客戶來源']||'—'}　負責：${c['負責夥伴']||'—'}</div>
+      ${c['備註']?`<div class="card-meta">備註：${c['備註']}</div>`:''}
+    </div>
+  `).join('');
+}
+document.getElementById('searchInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter') doSearch();
+});
+
+/* ---- 新增客戶 ---- */
+async function submitCustomer(e){
+  e.preventDefault();
+  const form = e.target;
+  const data = {};
+  new FormData(form).forEach((v,k)=>data[k]=v);
+  data['Google日曆提醒時間'] = todayDateTime(data['提醒時間'] || '10:00');
+  data['預約日期時間'] = combineDateTime(data['預約日期'], data['預約時間']);
+data['其它提醒日期時間'] = combineDateTime(data['其它提醒日期'], data['其它提醒時間']);
+
+  try{
+    if(location.protocol === 'file:') throw new Error('本機預覽略過電話查重');
+    const check = await apiPost({action:'checkPhone', phone:data['電話']});
+    if(check.ok && check.data && check.data.length>0){
+      showToast('這支電話已經是客戶了，請改用查詢');
+      return;
+    }
+  }catch(err){
+    // 本機預覽若無法讀取查重結果，仍允許先新增資料。
+  }
+
+  const res = await apiPost({action:'add', sheet:'客戶資料表', data});
+  if(res.ok){
+    showToast(res.noReadback ? '已送出，請到試算表確認' : '客戶新增成功，日曆提醒已建立');
+    form.reset();
+  } else {
+    showToast(res.error||'新增失敗');
+  }
+}
+
+/* ---- 預約名單 ---- */
+async function loadAppointments(){
+  const list = document.getElementById('appointmentList');
+  list.innerHTML = '<div class="empty-state">讀取中…</div>';
+  const res = await apiGet({action:'list', sheet:'預約紀錄表'});
+  if(!res.ok){ list.innerHTML = `<div class="empty-state">${res.error||'讀取失敗'}</div>`; return; }
+  if(res.data.length===0){
+    list.innerHTML = `<div class="empty-state"><div class="icon">◇</div>目前沒有預約紀錄</div>`;
+    return;
+  }
+  list.innerHTML = res.data.map(a=>`
+    <div class="card">
+      <div class="card-title">${a['客戶姓名／電話']||''}</div>
+      <div class="card-meta">${a['預約類型']||a['表單類型']||''}　${a['預約項目']||''}</div>
+      <div class="card-meta">${a['預約日期時間']||''}</div>
+      <div>${statusBadge(a['狀態'])}</div>
+    </div>
+  `).join('');
+}
+
+if(isConfigured()) loadToday();
+</script>
+
+</body>
+</html>

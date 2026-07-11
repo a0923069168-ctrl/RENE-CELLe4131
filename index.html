@@ -535,7 +535,7 @@
 
 <script>
 /* ===== 設定區：部署 GAS 後 把網址貼在這裡 ===== */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwYnA3DFREFwQtMfuQmssGUXVAU1gYWa4W0baYEg_6s64oEQrzUUu3qe7oKxOefcve-Uw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwpKGavRRtoxYNj5nuReeC5XU4wJokCvbm7bWIr8-3wqp1zCqbr509YnMed89MAWKdh/exec";
 /* ============================================ */
 
 const tabs = document.querySelectorAll('nav .tab');
@@ -783,7 +783,7 @@ async function loadAppointments(){
   list.innerHTML = res.data.map(a=>`
     <div class="card">
       <div class="card-title">${a['客戶姓名／電話']||''}</div>
-      <div class="card-meta">${a['預約類型']||a['表單類型']||''}　${a['預約項目']||''}</div>
+      <div class="card-meta">${a['預約項目']||''}</div>
       <div class="card-meta">${friendlyDateTime(a['預約日期時間'])}</div>
       <div>${statusBadge(a['狀態'])}</div>
     </div>

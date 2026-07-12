@@ -127,7 +127,36 @@
     border-radius:4px;
     padding:20px 22px;
     margin-bottom:14px;
+    border-left:4px solid var(--border);
   }
+  .group-header{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:26px 0 12px;
+    font-family:'Noto Serif TC',serif;
+    font-size:15px;
+    font-weight:500;
+    color:var(--accent-deep);
+    letter-spacing:1px;
+  }
+  .group-header:first-child{ margin-top:6px; }
+  .group-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    flex-shrink:0;
+  }
+  .group-count{
+    font-size:12px;
+    color:var(--text-secondary);
+    font-family:'Noto Sans TC',sans-serif;
+  }
+  .cat-體驗{ border-left-color:#A8C3A0; }
+  .cat-新會員使用產品{ border-left-color:#D8C9A8; }
+  .cat-種鑽{ border-left-color:#C9A88F; }
+  .cat-卸鑽{ border-left-color:#B0A8A0; }
+  .cat-未購買追蹤{ border-left-color:#B08968; }
   .card-title{
     font-family:'Noto Serif TC',serif;
     font-size:17px;
@@ -429,8 +458,10 @@
               <select name="追蹤區分">
                 <option>未選擇</option>
                 <option>種鑽</option>
+                <option>卸鑽</option>
                 <option>體驗</option>
                 <option>新會員使用產品</option>
+                <option>未購買追蹤</option>
               </select>
             </div>
             <div class="field">
@@ -438,7 +469,7 @@
               <input type="date" name="開始日期" id="followStartDate">
             </div>
             <div class="field">
-              <label>第1/4/6日提醒時間</label>
+              <label>首次追蹤提醒時間</label>
               <select name="提醒時間" id="followReminderTime">
                 <option>10:00</option>
                 <option>11:00</option>
@@ -455,7 +486,7 @@
               </select>
             </div>
             <div class="field">
-              <label>其它提醒日期時間</label>
+              <label>單次提醒日期時間</label>
               <div class="date-time-row">
   <input type="date" name="其它提醒日期">
   <select name="其它提醒時間">
@@ -477,7 +508,7 @@
             </div>
           </div>
           <div class="form-actions">
-            <div class="form-note">按下「新增客戶」後，系統會自動寫入試算表，並直接建立第1/4/6日 Google 日曆提醒（無需另外操作）</div>
+            <div class="form-note">按下「新增客戶」後，系統會自動寫入試算表並建立首次追蹤提醒。之後每次在「今日追蹤」填寫記錄時，可自行設定下次追蹤日期。每天上午 9:00 會收到一則當日彙總通知。</div>
           </div>
         </div>
         <div class="form-section">
@@ -535,7 +566,7 @@
 
 <script>
 /* ===== 設定區：部署 GAS 後 把網址貼在這裡 ===== */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxcVTtyIw_63lPsSdXTUdu5PfA5Q-JwvE6PAZ6Ww7Jjtn4vl6A6t558AunIE3TPymYQFQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxTGBHaZfhRe66Y2SJDnI2fqkxPwXO_DFnIXNtnX41nSg1_-07Q1Oh13hlWLAC2EBvk0Q/exec";
 /* ============================================ */
 
 const tabs = document.querySelectorAll('nav .tab');
@@ -683,6 +714,14 @@ function openGoogleCalendarReminder(data){
 }
 
 /* ---- 今日追蹤 ---- */
+const TRACK_CATEGORIES = [
+  { name:'體驗', color:'#A8C3A0' },
+  { name:'新會員使用產品', color:'#D8C9A8' },
+  { name:'種鑽', color:'#C9A88F' },
+  { name:'卸鑽', color:'#B0A8A0' },
+  { name:'未購買追蹤', color:'#B08968' }
+];
+
 async function loadToday(){
   const list = document.getElementById('todayList');
   list.innerHTML = '<div class="empty-state">讀取中…</div>';
@@ -692,26 +731,86 @@ async function loadToday(){
     list.innerHTML = `<div class="empty-state"><div class="icon">◇</div>今天沒有需要追蹤的客戶</div>`;
     return;
   }
-  list.innerHTML = res.data.map(row=>`
-    <div class="card">
-      <div class="row-track">
-        <div>
-          <div class="card-title">${row['客戶姓名']||''}</div>
-          <div class="card-meta">${row['追蹤區分']||row['追蹤類型']||''}　上次內容：${row['追蹤內容']||'—'}</div>
-          <div class="card-meta">上次反應：${row['客戶反應']||'—'}</div>
-        </div>
-        <button class="small" onclick="markDone('${row['追蹤ID']}')">標記已完成</button>
+
+  let html = '';
+  TRACK_CATEGORIES.forEach(cat=>{
+    const rows = res.data.filter(r => (r['追蹤類別']||'') === cat.name);
+    if(rows.length === 0) return;
+
+    html += `
+      <div class="group-header">
+        <span class="group-dot" style="background:${cat.color};"></span>
+        ${cat.name}
+        <span class="group-count">（${rows.length}位）</span>
       </div>
-    </div>
-  `).join('');
+    `;
+    html += rows.map(row => renderTrackCard(row, cat.name)).join('');
+  });
+
+  list.innerHTML = html;
 }
 
-async function markDone(id){
+function renderTrackCard(row, catName){
+  const uid = row['追蹤ID'];
+  const name = row['客戶姓名']||'';
+  const phone = row['電話']||'';
+  const options = TRACK_CATEGORIES.map(c =>
+    `<option${c.name===catName?' selected':''}>${c.name}</option>`
+  ).join('');
+
+  return `
+    <div class="card cat-${catName}">
+      <div class="card-title">${name}</div>
+      <div class="card-meta">上次內容：${row['本次內容']||'—'}</div>
+      <div class="card-meta">上次皮膚情況：${row['皮膚情況']||'—'}</div>
+      <div class="field" style="margin-top:10px;">
+        <label>追蹤類別</label>
+        <select id="cat-${uid}">${options}</select>
+      </div>
+      <div class="field">
+        <input type="text" id="item-${uid}" placeholder="本次內容（例如：詢問使用狀況）">
+      </div>
+      <div class="field">
+        <input type="text" id="skin-${uid}" placeholder="本次皮膚情況／客戶反應">
+      </div>
+      <div class="field">
+        <label>下次追蹤日期時間（留空代表不用再提醒）</label>
+        <input type="datetime-local" id="next-${uid}">
+      </div>
+      <div class="form-actions">
+        <button class="secondary" onclick="addFollowUp('${uid}','${name}','${phone}',false)">新增本次記錄</button>
+        <button class="primary" onclick="addFollowUp('${uid}','${name}','${phone}',true)">記錄並設為完成</button>
+      </div>
+    </div>
+  `;
+}
+
+async function addFollowUp(uid, name, phone, isDone){
+  const cat = document.getElementById('cat-'+uid).value;
+  const item = document.getElementById('item-'+uid).value.trim();
+  const skin = document.getElementById('skin-'+uid).value.trim();
+  const next = document.getElementById('next-'+uid).value;
+
+  if(!cat){
+    showToast('請選擇追蹤類別');
+    return;
+  }
+  if(!item && !skin && !isDone){
+    showToast('請至少填寫一項再送出');
+    return;
+  }
+
   const res = await apiPost({
-    action:'updateStatus', sheet:'追蹤紀錄表',
-    idField:'追蹤ID', id:id, updates:{'是否完成':'是'}
+    action:'appendNote',
+    '客戶姓名': name,
+    '電話': phone,
+    '追蹤類別': cat,
+    '本次內容': item,
+    '皮膚情況': skin,
+    '下次追蹤日期': isDone ? '' : next,
+    '是否完成': isDone ? '是' : '否'
   });
-  if(res.ok){ showToast('已標記完成'); loadToday(); }
+  if(res.ok){ showToast(isDone ? '已標記完成' : '已新增追蹤記錄'); loadToday(); }
   else showToast(res.error||'操作失敗');
 }
 
@@ -746,6 +845,12 @@ async function submitCustomer(e){
   const form = e.target;
   const data = {};
   new FormData(form).forEach((v,k)=>data[k]=v);
+
+  if(!data['追蹤區分'] || data['追蹤區分'] === '未選擇'){
+    showToast('請選擇追蹤區分');
+    return;
+  }
+
   data['Google日曆提醒時間'] = todayDateTime(data['提醒時間'] || '10:00');
   data['預約日期時間'] = combineDateTime(data['預約日期'], data['預約時間']);
 data['其它提醒日期時間'] = combineDateTime(data['其它提醒日期'], data['其它提醒時間']);

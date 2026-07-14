@@ -370,6 +370,88 @@
     cursor:pointer;
   }
   .row-track button.small:hover{background:var(--surface-alt);}
+
+  /* ---- 精簡列表：今日追蹤 ---- */
+  .list-row{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:4px;
+    margin-bottom:8px;
+  }
+  .list-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:11px 14px;
+    cursor:pointer;
+    flex-wrap:wrap;
+  }
+  .list-head:hover{background:var(--surface-alt);}
+  .list-head .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .list-head .name{
+    font-family:'Noto Serif TC',serif;
+    font-size:15px;
+    font-weight:500;
+    color:var(--accent-deep);
+  }
+  .list-head .meta{font-size:13px;color:var(--text-secondary);}
+  .list-head .snippet{
+    font-size:12px;
+    color:var(--text-secondary);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    flex:1;
+    min-width:60px;
+  }
+  .list-head .arrow{
+    margin-left:auto;
+    color:var(--accent);
+    font-size:11px;
+    transition:transform .2s;
+  }
+  .list-row.open .arrow{transform:rotate(180deg);}
+  .list-body{
+    display:none;
+    padding:6px 14px 14px;
+    border-top:1px dashed var(--border);
+  }
+  .list-row.open .list-body{display:block;}
+
+  /* ---- 精簡列表：預約名單 ---- */
+  .appt-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-left:4px solid var(--accent);
+    border-radius:4px;
+    padding:10px 14px;
+    margin-bottom:8px;
+    font-size:13px;
+    color:var(--text-secondary);
+  }
+  .appt-row.expired{border-left-color:#B44;}
+  .appt-row .time{
+    font-weight:600;
+    color:var(--accent-deep);
+    min-width:52px;
+  }
+  .appt-row .name{
+    font-family:'Noto Serif TC',serif;
+    font-size:15px;
+    font-weight:500;
+    color:var(--accent-deep);
+  }
+  .appt-row select{
+    width:auto;
+    min-width:96px;
+    margin-left:auto;
+    padding:6px 8px;
+    font-size:13px;
+  }
 </style>
 </head>
 <body>
@@ -760,36 +842,49 @@ function renderTrackCard(row, catName){
   const name = row['客戶姓名']||'';
   const phone = row['電話']||'';
   const note = row['備註']||'';
+  const catColor = (TRACK_CATEGORIES.find(c=>c.name===catName)||{}).color || '#9AAF6C';
+  const snippet = row['本次內容'] || note || '';
   const options = TRACK_CATEGORIES.map(c =>
     `<option${c.name===catName?' selected':''}>${c.name}</option>`
   ).join('');
 
   return `
-    <div class="card cat-${catName}">
-      <div class="card-title">${name}</div>
-      <div class="card-meta">${phone}${note?`　<span style="color:#B38A3C;">${note}</span>`:''}</div>
-      <div class="card-meta">上次內容：${row['本次內容']||'—'}</div>
-      <div class="card-meta">上次皮膚情況：${row['皮膚情況']||'—'}</div>
-      <div class="field" style="margin-top:10px;">
-        <label>追蹤類別</label>
-        <select id="cat-${uid}">${options}</select>
+    <div class="list-row" id="row-${uid}">
+      <div class="list-head" onclick="toggleRow('${uid}')">
+        <span class="dot" style="background:${catColor};"></span>
+        <span class="name">${name}</span>
+        <span class="meta">${phone}</span>
+        <span class="snippet">${snippet}</span>
+        <span class="arrow">▼</span>
       </div>
-      <div class="field">
-        <input type="text" id="item-${uid}" placeholder="本次內容（例如：詢問使用狀況）">
-      </div>
-      <div class="field">
-        <input type="text" id="skin-${uid}" placeholder="本次皮膚情況／客戶反應">
-      </div>
-      <div class="field">
-        <label>下次追蹤日期時間（留空代表不用再提醒）</label>
-        <input type="datetime-local" id="next-${uid}">
-      </div>
-      <div class="form-actions">
-        <button class="secondary" onclick="addFollowUp('${uid}','${name}','${phone}',false)">新增本次記錄</button>
-        <button class="primary" onclick="addFollowUp('${uid}','${name}','${phone}',true)">記錄並設為完成</button>
+      <div class="list-body">
+        <div class="card-meta" style="margin-top:8px;">上次內容：${row['本次內容']||'—'}</div>
+        <div class="card-meta">上次皮膚情況：${row['皮膚情況']||'—'}</div>
+        <div class="field" style="margin-top:6px;">
+          <label>追蹤類別</label>
+          <select id="cat-${uid}">${options}</select>
+        </div>
+        <div class="field">
+          <input type="text" id="item-${uid}" placeholder="本次內容（例如：詢問使用狀況）">
+        </div>
+        <div class="field">
+          <input type="text" id="skin-${uid}" placeholder="本次皮膚情況／客戶反應">
+        </div>
+        <div class="field">
+          <label>下次追蹤日期時間（留空代表不用再提醒）</label>
+          <input type="datetime-local" id="next-${uid}">
+        </div>
+        <div class="form-actions">
+          <button class="secondary" onclick="addFollowUp('${uid}','${name}','${phone}',false)">新增本次記錄</button>
+          <button class="primary" onclick="addFollowUp('${uid}','${name}','${phone}',true)">記錄並設為完成</button>
+        </div>
       </div>
     </div>
   `;
+}
+
+function toggleRow(uid){
+  document.getElementById('row-'+uid).classList.toggle('open');
 }
 
 async function addFollowUp(uid, name, phone, isDone){
@@ -891,6 +986,38 @@ async function submitCustomer(e){
 }
 
 /* ---- 預約名單 ---- */
+function dateKey(d){
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
+function dateLabel(d){
+  const wd = ['日','一','二','三','四','五','六'][d.getDay()];
+  return `${d.getMonth()+1}/${d.getDate()}（${wd}）`;
+}
+
+function renderApptRow(a, options, expired){
+  const rowId = a._rowNumber;
+  const date = new Date(a['預約日期時間']);
+  const pad = n => String(n).padStart(2,'0');
+  const timeText = Number.isNaN(date.getTime())
+    ? String(a['預約日期時間']||'')
+    : (expired
+        ? `${date.getMonth()+1}/${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+        : `${pad(date.getHours())}:${pad(date.getMinutes())}`);
+
+  return `
+    <div class="appt-row${expired?' expired':''}">
+      <span class="time">${timeText}</span>
+      <span class="name">${a['客戶姓名']||''}</span>
+      <span class="meta">${a['電話']||'—'}</span>
+      <span class="meta">${a['預約項目']||''}</span>
+      ${a['地點']?`<span class="meta">＠${a['地點']}</span>`:''}
+      <select onchange="updateAppointmentStatus('${rowId}', this.value)">${options}</select>
+    </div>
+  `;
+}
+
 async function loadAppointments(){
   const list = document.getElementById('appointmentList');
   list.innerHTML = '<div class="empty-state">讀取中…</div>';
@@ -911,32 +1038,66 @@ async function loadAppointments(){
     return;
   }
 
-  const now = Date.now();
+  const now = new Date();
+  const todayStr = dateKey(now);
+  const tmr = new Date(now); tmr.setDate(tmr.getDate()+1);
+  const tomorrowStr = dateKey(tmr);
   const statusOptions = ['已預約','已完成','已取消','未到'];
 
-  list.innerHTML = active.map(a=>{
-    const rowId = a._rowNumber;
+  const expired = [];
+  const groups = [];        // [{key, label, rows:[]}] 依日期排序
+  const groupMap = {};
+
+  active.forEach(a=>{
     const current = String(a['狀態']||'已預約').trim();
-    const time = new Date(a['預約日期時間']).getTime();
-    const expired = time && time < now;
     const options = statusOptions.map(opt=>
       `<option value="${opt}" ${opt===current?'selected':''}>${opt}</option>`
     ).join('');
+    const date = new Date(a['預約日期時間']);
+    const valid = !Number.isNaN(date.getTime());
 
-    return `
-    <div class="card">
-      <div class="card-title">${a['客戶姓名']||''}</div>
-      <div class="card-meta">電話：${a['電話']||'—'}</div>
-      <div class="card-meta">${a['預約項目']||''}</div>
-      <div class="card-meta">${friendlyDateTime(a['預約日期時間'])}${expired?' <span style="color:#B44;font-weight:600;">⚠ 已過期，請更新狀態</span>':''}</div>
-      ${a['地點']?`<div class="card-meta">地點：${a['地點']}</div>`:''}
-      <div class="field" style="margin-top:10px;">
-        <label>狀態</label>
-        <select onchange="updateAppointmentStatus('${rowId}', this.value)">${options}</select>
+    if(valid && date.getTime() < now.getTime()){
+      expired.push(renderApptRow(a, options, true));
+      return;
+    }
+
+    const key = valid ? dateKey(date) : 'other';
+    if(!groupMap[key]){
+      let label = '未填日期';
+      if(valid){
+        if(key === todayStr) label = '今天';
+        else if(key === tomorrowStr) label = '明天';
+        else label = dateLabel(date);
+      }
+      groupMap[key] = { label, rows: [] };
+      groups.push(groupMap[key]);
+    }
+    groupMap[key].rows.push(renderApptRow(a, options, false));
+  });
+
+  let html = '';
+  if(expired.length > 0){
+    html += `
+      <div class="group-header" style="color:#B44;">
+        <span class="group-dot" style="background:#B44;"></span>
+        已過期，請更新狀態
+        <span class="group-count">（${expired.length}筆）</span>
       </div>
-    </div>
-  `;
-  }).join('');
+    `;
+    html += expired.join('');
+  }
+  groups.forEach(g=>{
+    html += `
+      <div class="group-header">
+        <span class="group-dot" style="background:var(--accent);"></span>
+        ${g.label}
+        <span class="group-count">（${g.rows.length}筆）</span>
+      </div>
+    `;
+    html += g.rows.join('');
+  });
+
+  list.innerHTML = html;
 }
 
 async function updateAppointmentStatus(rowId, status){

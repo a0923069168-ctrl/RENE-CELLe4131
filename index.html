@@ -285,25 +285,6 @@
     line-height:1.7;
     letter-spacing:1px;
   }
-  button.calendar-button{
-    min-width:260px;
-    background:#B38A3C;
-    color:#fff;
-    border:1px solid #B38A3C;
-    padding:13px 26px;
-    box-shadow:0 4px 12px rgba(122,98,52,.18);
-  }
-  button.calendar-button:hover{
-    background:#9A7330;
-    border-color:#9A7330;
-  }
-  .date-time-row{
-    display:grid;
-    grid-template-columns:1fr 140px;
-    gap:10px;
-  }
-  @media(max-width:600px){.date-time-row{grid-template-columns:1fr;}}
-  @media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
 
   .empty-state{
     text-align:center;
@@ -336,6 +317,43 @@
     text-align:center;
     font-size:13px;
   }
+
+  .notify-banner{
+    max-width:1180px;
+    width:calc(100% - 64px);
+    margin:18px auto 0;
+    background:#FFF8E8;
+    border:1px solid #DCCAA2;
+    border-left:4px solid #B38A3C;
+    border-radius:4px;
+    padding:14px 18px;
+    font-size:14px;
+    color:#7A6234;
+    line-height:1.9;
+    position:relative;
+  }
+  .notify-banner .notify-title{
+    font-family:'Noto Serif TC',serif;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:2px;
+    margin-bottom:4px;
+    color:#7A6234;
+  }
+  .notify-banner .notify-close{
+    position:absolute;
+    top:10px;
+    right:14px;
+    background:none;
+    border:none;
+    color:#B38A3C;
+    font-size:16px;
+    cursor:pointer;
+    line-height:1;
+  }
+  @media(max-width:900px){.notify-banner{width:calc(100% - 32px);}}
+  @media(max-width:600px){.notify-banner{width:calc(100% - 24px);}}
+
   .row-track{
     display:flex;
     justify-content:space-between;
@@ -371,6 +389,8 @@
 <div id="configBanner" class="config-banner" style="display:none;">
   尚未設定後端連線網址，請編輯本檔案中的 GAS_URL 常數
 </div>
+
+<div id="notifyBanner" class="notify-banner" style="display:none;"></div>
 
 <main>
 
@@ -451,25 +471,33 @@
           </div>
         </div>
         <div class="form-section reminder-section">
-          <div class="form-section-title">追蹤與日曆提醒</div>
+          <div class="form-section-title">追蹤提醒設定</div>
           <div class="form-grid">
             <div class="field">
-              <label>追蹤區分</label>
+              <label>追蹤區分（不追蹤可留在「未選擇」）</label>
               <select name="追蹤區分">
                 <option>未選擇</option>
-                <option>種鑽</option>
-                <option>卸鑽</option>
                 <option>體驗</option>
                 <option>新會員使用產品</option>
+                <option>種鑽</option>
+                <option>卸鑽</option>
                 <option>未購買追蹤</option>
+                <option>不需追蹤</option>
               </select>
             </div>
             <div class="field">
-              <label>開始日期</label>
-              <input type="date" name="開始日期" id="followStartDate">
+              <label>提醒方式</label>
+              <select name="提醒方式" id="remindMode">
+                <option>三次提醒</option>
+                <option>單次提醒</option>
+              </select>
             </div>
             <div class="field">
-              <label>首次追蹤提醒時間</label>
+              <label id="remindDateLabel">開始日期（第1、4、6天提醒）</label>
+              <input type="date" name="追蹤日期" id="followStartDate">
+            </div>
+            <div class="field">
+              <label>提醒時間</label>
               <select name="提醒時間" id="followReminderTime">
                 <option>10:00</option>
                 <option>11:00</option>
@@ -485,30 +513,9 @@
                 <option>21:00</option>
               </select>
             </div>
-            <div class="field">
-              <label>單次提醒日期時間</label>
-              <div class="date-time-row">
-  <input type="date" name="其它提醒日期">
-  <select name="其它提醒時間">
-    <option>未設定</option>
-    <option>10:00</option>
-    <option>11:00</option>
-    <option>12:00</option>
-    <option>13:00</option>
-    <option>14:00</option>
-    <option>15:00</option>
-    <option>16:00</option>
-    <option>17:00</option>
-    <option>18:00</option>
-    <option>19:00</option>
-    <option>20:00</option>
-    <option>21:00</option>
-  </select>
-</div>
-            </div>
           </div>
           <div class="form-actions">
-            <div class="form-note">按下「新增客戶」後，系統會自動寫入試算表並建立首次追蹤提醒。之後每次在「今日追蹤」填寫記錄時，可自行設定下次追蹤日期。每天上午 9:00 會收到一則當日彙總通知。</div>
+            <div class="form-note">三次提醒：以開始日期推算，第 1、4、6 天各建立一筆提醒。單次提醒：只在指定日期提醒一次。到期當天會出現在「今日追蹤」與頁面上方的今日提醒。</div>
           </div>
         </div>
         <div class="form-section">
@@ -545,6 +552,10 @@
                 <option>21:00</option>
               </select>
             </div>
+            <div class="field">
+              <label>地點</label>
+              <input type="text" name="地點" placeholder="例如：台中店、客戶家">
+            </div>
           </div>
         </div>
         <div class="field">
@@ -566,7 +577,7 @@
 
 <script>
 /* ===== 設定區：部署 GAS 後 把網址貼在這裡 ===== */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxF9UhP1Du7FMF1IZaCzbCydG8JPlsYQ21Fd68iYorbEDTapiTPPDi6FZDf84HN7v5vUw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw3jvJ6BWJDGO7G5-4cC95bYlRMwUOhUHaxGItHVm6-Rf0ObrdTvp7wFv_Ad1K9lqNh5A/exec";
 /* ============================================ */
 
 const tabs = document.querySelectorAll('nav .tab');
@@ -642,22 +653,6 @@ function statusBadge(status){
   return `<span class="badge ${cls}">${status||'未設定'}</span>`;
 }
 
-function formatCalendarDate(value, addMinutes=0){
-  const date = new Date(value);
-  if(Number.isNaN(date.getTime())) return '';
-  date.setMinutes(date.getMinutes() + addMinutes);
-  const pad = n => String(n).padStart(2,'0');
-  return [
-    date.getFullYear(),
-    pad(date.getMonth()+1),
-    pad(date.getDate())
-  ].join('') + 'T' + [
-    pad(date.getHours()),
-    pad(date.getMinutes()),
-    '00'
-  ].join('');
-}
-
 function combineDateTime(dateValue, timeValue){
   if(!dateValue || !timeValue || timeValue === '未設定') return '';
   return `${dateValue}T${timeValue}`;
@@ -671,46 +666,44 @@ function friendlyDateTime(value){
   return `${date.getFullYear()}/${pad(date.getMonth()+1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function todayDateTime(timeValue){
+function todayDatePart(){
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
-  const datePart = [now.getFullYear(), pad(now.getMonth()+1), pad(now.getDate())].join('-');
-  return `${datePart}T${timeValue}`;
+  return [now.getFullYear(), pad(now.getMonth()+1), pad(now.getDate())].join('-');
 }
 
-function openGoogleCalendarReminder(data){
-  if(!data){
-    const form = document.getElementById('addForm');
-    data = {};
-    new FormData(form).forEach((v,k)=>data[k]=v);
+/* ---- 提醒方式切換：更新日期欄位說明 ---- */
+document.getElementById('remindMode').addEventListener('change', e=>{
+  document.getElementById('remindDateLabel').textContent =
+    e.target.value === '單次提醒'
+      ? '提醒日期'
+      : '開始日期（第1、4、6天提醒）';
+});
+
+/* ---- 今日提醒面板（進入網頁自動顯示） ---- */
+async function loadNotify(){
+  const banner = document.getElementById('notifyBanner');
+  try{
+    const res = await apiGet({action:'notify'});
+    if(!res.ok){ banner.style.display='none'; return; }
+
+    const f = res.followUps || [];
+    const a = res.appointments || [];
+    if(f.length===0 && a.length===0){ banner.style.display='none'; return; }
+
+    let html = `<button class="notify-close" onclick="this.parentElement.style.display='none'">✕</button>`;
+    html += `<div class="notify-title">🔔 今日提醒</div>`;
+    if(f.length>0){
+      html += `<div>追蹤 ${f.length} 位：${f.map(x=>`${x.name}（${x.type}）`).join('、')}</div>`;
+    }
+    if(a.length>0){
+      html += `<div>預約 ${a.length} 位：${a.map(x=>`${x.time}　${x.name}${x.phone?'（'+x.phone+'）':''}｜${x.type}${x.place?'＠'+x.place:''}`).join('、')}</div>`;
+    }
+    banner.innerHTML = html;
+    banner.style.display='block';
+  }catch(err){
+    banner.style.display='none';
   }
-  const now = new Date();
-  const reminderHourMinute = data['提醒時間'] || '10:00';
-  const [rh, rm] = reminderHourMinute.split(':').map(Number);
-  const reminderTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), rh, rm, 0);
-  const customerName = data['客戶姓名'] || '客戶';
-  const trackType = data['追蹤區分'] && data['追蹤區分'] !== '未選擇' ? data['追蹤區分'] : '追蹤';
-  const details = [
-    data['電話'] ? `電話：${data['電話']}` : '',
-    data['LINE名稱'] ? `LINE：${data['LINE名稱']}` : '',
-    data['購買方案'] && data['購買方案'] !== '未選擇' ? `購買方案：${data['購買方案']}` : '',
-    data['後援人'] ? `後援人：${data['後援人']}` : '',
-    data['排線'] ? `排線：${data['排線']}` : '',
-    data['備註'] ? `備註：${data['備註']}` : ''
-  ].filter(Boolean).join('\n');
-  [1,4,6].forEach(day=>{
-    const baseDate = new Date(reminderTime);
-    baseDate.setDate(baseDate.getDate() + day);
-    const start = formatCalendarDate(baseDate);
-    const end = formatCalendarDate(baseDate, 30);
-    const title = `${customerName}｜${trackType}第${day}日提醒`;
-    const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
-      + '&text=' + encodeURIComponent(title)
-      + '&dates=' + encodeURIComponent(`${start}/${end}`)
-      + '&ctz=Asia%2FTaipei'
-      + '&details=' + encodeURIComponent(details);
-    window.open(url, '_blank');
-  });
 }
 
 /* ---- 今日追蹤 ---- */
@@ -747,6 +740,18 @@ async function loadToday(){
     html += rows.map(row => renderTrackCard(row, cat.name)).join('');
   });
 
+  const others = res.data.filter(r => !TRACK_CATEGORIES.some(c => c.name === (r['追蹤類別']||'')));
+  if(others.length > 0){
+    html += `
+      <div class="group-header">
+        <span class="group-dot" style="background:#9AAF6C;"></span>
+        其他提醒
+        <span class="group-count">（${others.length}位）</span>
+      </div>
+    `;
+    html += others.map(row => renderTrackCard(row, row['追蹤類別']||'')).join('');
+  }
+
   list.innerHTML = html;
 }
 
@@ -754,6 +759,7 @@ function renderTrackCard(row, catName){
   const uid = row['追蹤ID'];
   const name = row['客戶姓名']||'';
   const phone = row['電話']||'';
+  const note = row['備註']||'';
   const options = TRACK_CATEGORIES.map(c =>
     `<option${c.name===catName?' selected':''}>${c.name}</option>`
   ).join('');
@@ -761,6 +767,7 @@ function renderTrackCard(row, catName){
   return `
     <div class="card cat-${catName}">
       <div class="card-title">${name}</div>
+      <div class="card-meta">${phone}${note?`　<span style="color:#B38A3C;">${note}</span>`:''}</div>
       <div class="card-meta">上次內容：${row['本次內容']||'—'}</div>
       <div class="card-meta">上次皮膚情況：${row['皮膚情況']||'—'}</div>
       <div class="field" style="margin-top:10px;">
@@ -802,6 +809,7 @@ async function addFollowUp(uid, name, phone, isDone){
 
   const res = await apiPost({
     action:'appendNote',
+    '追蹤ID': uid,
     '客戶姓名': name,
     '電話': phone,
     '追蹤類別': cat,
@@ -810,7 +818,11 @@ async function addFollowUp(uid, name, phone, isDone){
     '下次追蹤日期': isDone ? '' : next,
     '是否完成': isDone ? '是' : '否'
   });
-  if(res.ok){ showToast(isDone ? '已標記完成' : '已新增追蹤記錄'); loadToday(); }
+  if(res.ok){
+    showToast(isDone ? '已標記完成' : '已新增追蹤記錄');
+    loadToday();
+    loadNotify();
+  }
   else showToast(res.error||'操作失敗');
 }
 
@@ -846,14 +858,16 @@ async function submitCustomer(e){
   const data = {};
   new FormData(form).forEach((v,k)=>data[k]=v);
 
-  if(!data['追蹤區分'] || data['追蹤區分'] === '未選擇'){
-    showToast('請選擇追蹤區分');
-    return;
+  const track = data['追蹤區分'] || '未選擇';
+  const needFollow = track !== '未選擇' && track !== '不需追蹤';
+
+  if(needFollow){
+    const d = data['追蹤日期'] || todayDatePart();
+    const t = data['提醒時間'] || '10:00';
+    data['追蹤開始日期時間'] = `${d}T${t}`;
   }
 
-  data['Google日曆提醒時間'] = todayDateTime(data['提醒時間'] || '10:00');
   data['預約日期時間'] = combineDateTime(data['預約日期'], data['預約時間']);
-data['其它提醒日期時間'] = combineDateTime(data['其它提醒日期'], data['其它提醒時間']);
 
   try{
     if(location.protocol === 'file:') throw new Error('本機預覽略過電話查重');
@@ -868,8 +882,9 @@ data['其它提醒日期時間'] = combineDateTime(data['其它提醒日期'], d
 
   const res = await apiPost({action:'add', sheet:'客戶資料表', data});
   if(res.ok){
-    showToast(res.noReadback ? '已送出，請到試算表確認' : '客戶新增成功，日曆提醒已建立');
+    showToast(res.noReadback ? '已送出，請到試算表確認' : '客戶新增成功');
     form.reset();
+    loadNotify();
   } else {
     showToast(res.error||'新增失敗');
   }
@@ -881,21 +896,59 @@ async function loadAppointments(){
   list.innerHTML = '<div class="empty-state">讀取中…</div>';
   const res = await apiGet({action:'list', sheet:'預約紀錄表'});
   if(!res.ok){ list.innerHTML = `<div class="empty-state">${res.error||'讀取失敗'}</div>`; return; }
-  if(res.data.length===0){
-    list.innerHTML = `<div class="empty-state"><div class="icon">◇</div>目前沒有預約紀錄</div>`;
+
+  const active = res.data.filter(a=>{
+    const status = String(a['狀態']||'').trim();
+    return status !== '已完成' && status !== '已取消' && status !== '未到';
+  }).sort((x,y)=>{
+    const dx = new Date(x['預約日期時間']).getTime() || 0;
+    const dy = new Date(y['預約日期時間']).getTime() || 0;
+    return dx - dy;
+  });
+
+  if(active.length===0){
+    list.innerHTML = `<div class="empty-state"><div class="icon">◇</div>目前沒有待處理的預約</div>`;
     return;
   }
-  list.innerHTML = res.data.map(a=>`
+
+  const now = Date.now();
+  const statusOptions = ['已預約','已完成','已取消','未到'];
+
+  list.innerHTML = active.map(a=>{
+    const rowId = a._rowNumber;
+    const current = String(a['狀態']||'已預約').trim();
+    const time = new Date(a['預約日期時間']).getTime();
+    const expired = time && time < now;
+    const options = statusOptions.map(opt=>
+      `<option value="${opt}" ${opt===current?'selected':''}>${opt}</option>`
+    ).join('');
+
+    return `
     <div class="card">
       <div class="card-title">${a['客戶姓名']||''}</div>
+      <div class="card-meta">電話：${a['電話']||'—'}</div>
       <div class="card-meta">${a['預約項目']||''}</div>
-      <div class="card-meta">${friendlyDateTime(a['預約日期時間'])}</div>
-      <div>${statusBadge(a['狀態'])}</div>
+      <div class="card-meta">${friendlyDateTime(a['預約日期時間'])}${expired?' <span style="color:#B44;font-weight:600;">⚠ 已過期，請更新狀態</span>':''}</div>
+      ${a['地點']?`<div class="card-meta">地點：${a['地點']}</div>`:''}
+      <div class="field" style="margin-top:10px;">
+        <label>狀態</label>
+        <select onchange="updateAppointmentStatus('${rowId}', this.value)">${options}</select>
+      </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
-if(isConfigured()) loadToday();
+async function updateAppointmentStatus(rowId, status){
+  const res = await apiPost({
+    action:'updateStatus', sheet:'預約紀錄表',
+    id: rowId, updates:{'狀態': status}
+  });
+  if(res.ok){ showToast('狀態已更新'); loadAppointments(); loadNotify(); }
+  else showToast(res.error||'更新失敗');
+}
+
+if(isConfigured()){ loadToday(); loadNotify(); }
 </script>
 
 </body>

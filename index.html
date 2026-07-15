@@ -286,6 +286,29 @@
     letter-spacing:1px;
   }
 
+  .check-group{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 18px;
+    margin-bottom:12px;
+  }
+  .check-group label{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    color:var(--text-secondary);
+    margin:0;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .check-group input[type="checkbox"]{
+    width:auto;
+    padding:0;
+    accent-color:var(--accent);
+    cursor:pointer;
+  }
+
   .empty-state{
     text-align:center;
     padding:50px 20px;
@@ -533,6 +556,22 @@
               <option>經理單</option>
               <option>散買</option>
             </select>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">膚況（可複選）</div>
+          <div class="check-group">
+            <label><input type="checkbox" name="膚況選項" value="皮膚油、毛孔粗大">皮膚油、毛孔粗大</label>
+            <label><input type="checkbox" name="膚況選項" value="暗黃、膚色不均">暗黃、膚色不均</label>
+            <label><input type="checkbox" name="膚況選項" value="皮膚乾燥缺水">皮膚乾燥缺水</label>
+            <label><input type="checkbox" name="膚況選項" value="雀斑黑色素">雀斑黑色素</label>
+            <label><input type="checkbox" name="膚況選項" value="粉刺痘痘">粉刺痘痘</label>
+            <label><input type="checkbox" name="膚況選項" value="鬆弛、需提升緊緻">鬆弛、需提升緊緻</label>
+            <label><input type="checkbox" name="膚況選項" value="面部紅血絲、敏感">面部紅血絲、敏感</label>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>膚況備註（過敏史、3個月內醫美項目、其他補充）</label>
+            <input type="text" name="膚況備註" placeholder="例如：對酒精過敏、上個月做過皮秒">
           </div>
         </div>
         <div class="form-section">
@@ -841,9 +880,9 @@ function renderTrackCard(row, catName){
   const uid = row['追蹤ID'];
   const name = row['客戶姓名']||'';
   const phone = row['電話']||'';
-  const note = row['備註']||'';
+  const due = row['到期提醒']||'';
   const catColor = (TRACK_CATEGORIES.find(c=>c.name===catName)||{}).color || '#9AAF6C';
-  const snippet = row['本次內容'] || note || '';
+  const snippet = row['本次內容'] || row['提醒方式'] || '';
   const options = TRACK_CATEGORIES.map(c =>
     `<option${c.name===catName?' selected':''}>${c.name}</option>`
   ).join('');
@@ -858,7 +897,8 @@ function renderTrackCard(row, catName){
         <span class="arrow">▼</span>
       </div>
       <div class="list-body">
-        <div class="card-meta" style="margin-top:8px;">上次內容：${row['本次內容']||'—'}</div>
+        ${row['提醒清單']?`<div class="card-meta" style="margin-top:8px;">提醒排程：${row['提醒清單']}</div>`:''}
+        <div class="card-meta">上次內容：${row['本次內容']||'—'}</div>
         <div class="card-meta">上次皮膚情況：${row['皮膚情況']||'—'}</div>
         <div class="field" style="margin-top:6px;">
           <label>追蹤類別</label>
@@ -871,12 +911,12 @@ function renderTrackCard(row, catName){
           <input type="text" id="skin-${uid}" placeholder="本次皮膚情況／客戶反應">
         </div>
         <div class="field">
-          <label>下次追蹤日期時間（留空代表不用再提醒）</label>
+          <label>下次追蹤日期時間（留空代表照原排程提醒）</label>
           <input type="datetime-local" id="next-${uid}">
         </div>
         <div class="form-actions">
-          <button class="secondary" onclick="addFollowUp('${uid}','${name}','${phone}',false)">新增本次記錄</button>
-          <button class="primary" onclick="addFollowUp('${uid}','${name}','${phone}',true)">記錄並設為完成</button>
+          <button class="secondary" onclick="addFollowUp('${uid}','${due}',false)">新增本次記錄</button>
+          <button class="primary" onclick="addFollowUp('${uid}','${due}',true)">記錄並設為完成</button>
         </div>
       </div>
     </div>
@@ -887,7 +927,7 @@ function toggleRow(uid){
   document.getElementById('row-'+uid).classList.toggle('open');
 }
 
-async function addFollowUp(uid, name, phone, isDone){
+async function addFollowUp(uid, due, isDone){
   const cat = document.getElementById('cat-'+uid).value;
   const item = document.getElementById('item-'+uid).value.trim();
   const skin = document.getElementById('skin-'+uid).value.trim();
@@ -905,8 +945,7 @@ async function addFollowUp(uid, name, phone, isDone){
   const res = await apiPost({
     action:'appendNote',
     '追蹤ID': uid,
-    '客戶姓名': name,
-    '電話': phone,
+    '到期提醒': due,
     '追蹤類別': cat,
     '本次內容': item,
     '皮膚情況': skin,
@@ -938,6 +977,7 @@ async function doSearch(){
       <div class="card-meta">${c['電話']||''}　${c['LINE名稱']?'LINE：'+c['LINE名稱']:''}</div>
       <div>${statusBadge(c['客戶狀態'])}</div>
       <div class="card-meta" style="margin-top:8px;">來源：${c['客戶來源']||'—'}　負責：${c['負責夥伴']||'—'}</div>
+      ${c['膚況']?`<div class="card-meta">膚況：${c['膚況']}</div>`:''}
       ${c['備註']?`<div class="card-meta">備註：${c['備註']}</div>`:''}
     </div>
   `).join('');
@@ -952,6 +992,14 @@ async function submitCustomer(e){
   const form = e.target;
   const data = {};
   new FormData(form).forEach((v,k)=>data[k]=v);
+
+  // 膚況：勾選項目＋備註 合併成一欄
+  const skinChecks = Array.from(form.querySelectorAll('input[name="膚況選項"]:checked'))
+    .map(el=>el.value);
+  const skinNote = (data['膚況備註']||'').trim();
+  data['膚況'] = skinChecks.join('、') + (skinNote ? (skinChecks.length?'；':'') + skinNote : '');
+  delete data['膚況選項'];
+  delete data['膚況備註'];
 
   const track = data['追蹤區分'] || '未選擇';
   const needFollow = track !== '未選擇' && track !== '不需追蹤';

@@ -302,7 +302,8 @@
     cursor:pointer;
     white-space:nowrap;
   }
-  .check-group input[type="checkbox"]{
+  .check-group input[type="checkbox"],
+  .check-group input[type="radio"]{
     width:auto;
     padding:0;
     accent-color:var(--accent);
@@ -519,11 +520,19 @@
         <div class="form-grid">
           <div class="field">
             <label>客戶姓名 *</label>
-            <input name="客戶姓名" required>
+            <input name="客戶姓名">
           </div>
           <div class="field">
-            <label>電話 *</label>
-            <input name="電話" required>
+            <label>稱謂 *</label>
+            <div class="check-group" style="margin-bottom:0;padding-top:9px;">
+              <label><input type="radio" name="稱謂" value="女士">女士</label>
+              <label><input type="radio" name="稱謂" value="先生">先生</label>
+              <label><input type="radio" name="稱謂" value="不透漏">不透漏</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>電話 *（09 開頭共 10 碼）</label>
+            <input name="電話" inputmode="numeric" maxlength="10" placeholder="0912345678">
           </div>
           <div class="field">
             <label>LINE名稱</label>
@@ -555,6 +564,36 @@
               <option>小資試用方案</option>
               <option>經理單</option>
               <option>散買</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>年齡層</label>
+            <select name="年齡層">
+              <option>未選擇</option>
+              <option>20歲以下</option>
+              <option>21-30歲</option>
+              <option>31-40歲</option>
+              <option>41-50歲</option>
+              <option>51-60歲</option>
+              <option>61歲以上</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>職業</label>
+            <select name="職業">
+              <option>未選擇</option>
+              <option>上班族</option>
+              <option>服務業</option>
+              <option>科技業</option>
+              <option>金融業</option>
+              <option>公職人員</option>
+              <option>醫護</option>
+              <option>教職</option>
+              <option>家管</option>
+              <option>自營</option>
+              <option>學生</option>
+              <option>退休</option>
+              <option>其他</option>
             </select>
           </div>
         </div>
@@ -1001,6 +1040,23 @@ async function submitCustomer(e){
   const data = {};
   new FormData(form).forEach((v,k)=>data[k]=v);
 
+  // 必填檢查：缺漏欄位跳窗一次列出
+  const missing = [];
+  if(!String(data['客戶姓名']||'').trim()) missing.push('客戶姓名');
+  if(!data['稱謂']) missing.push('稱謂');
+  const phoneValue = String(data['電話']||'').trim();
+  if(!phoneValue) missing.push('電話');
+  if(missing.length>0){
+    alert('以下欄位尚未填寫：\n' + missing.join('、'));
+    return;
+  }
+  // 電話格式驗證：台灣手機 09 開頭共 10 碼
+  if(!/^09\d{8}$/.test(phoneValue)){
+    alert('電話格式錯誤：須為 09 開頭共 10 碼的手機號碼\n例如：0912345678');
+    return;
+  }
+  data['電話'] = phoneValue;
+
   // 膚況：每個勾選寫入對應欄位（✓），備註獨立一欄；
   // 另組一份摘要給追蹤紀錄表當基準膚況（客戶資料表無此標題，不會寫入）
   const skinChecks = Array.from(form.querySelectorAll('input[name="膚況選項"]:checked'))
@@ -1035,11 +1091,11 @@ async function submitCustomer(e){
 
   const res = await apiPost({action:'add', sheet:'客戶資料表', data});
   if(res.ok){
-    showToast(res.noReadback ? '已送出，請到試算表確認' : '客戶新增成功');
+    alert('✅ 資料已送出！');
     form.reset();
     loadNotify();
   } else {
-    showToast(res.error||'新增失敗');
+    alert('❌ 新增失敗：' + (res.error||'請稍後再試'));
   }
 }
 

@@ -977,7 +977,7 @@ async function doSearch(){
       <div class="card-meta">${c['電話']||''}　${c['LINE名稱']?'LINE：'+c['LINE名稱']:''}</div>
       <div>${statusBadge(c['客戶狀態'])}</div>
       <div class="card-meta" style="margin-top:8px;">來源：${c['客戶來源']||'—'}　負責：${c['負責夥伴']||'—'}</div>
-      ${c['膚況']?`<div class="card-meta">膚況：${c['膚況']}</div>`:''}
+      ${c['膚況']?`<div class="card-meta">膚況：${String(c['膚況']).split('\n').join('、')}</div>`:''}
       ${c['備註']?`<div class="card-meta">備註：${c['備註']}</div>`:''}
     </div>
   `).join('');
@@ -993,11 +993,13 @@ async function submitCustomer(e){
   const data = {};
   new FormData(form).forEach((v,k)=>data[k]=v);
 
-  // 膚況：勾選項目＋備註 合併成一欄
+  // 膚況：勾選項目一項一行，備註放最後一行
   const skinChecks = Array.from(form.querySelectorAll('input[name="膚況選項"]:checked'))
     .map(el=>el.value);
   const skinNote = (data['膚況備註']||'').trim();
-  data['膚況'] = skinChecks.join('、') + (skinNote ? (skinChecks.length?'；':'') + skinNote : '');
+  const skinLines = skinChecks.slice();
+  if(skinNote) skinLines.push('備註：'+skinNote);
+  data['膚況'] = skinLines.join('\n');
   delete data['膚況選項'];
   delete data['膚況備註'];
 

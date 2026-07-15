@@ -561,13 +561,13 @@
         <div class="form-section">
           <div class="form-section-title">膚況（可複選）</div>
           <div class="check-group">
-            <label><input type="checkbox" name="膚況選項" value="皮膚油、毛孔粗大">皮膚油、毛孔粗大</label>
-            <label><input type="checkbox" name="膚況選項" value="暗黃、膚色不均">暗黃、膚色不均</label>
-            <label><input type="checkbox" name="膚況選項" value="皮膚乾燥缺水">皮膚乾燥缺水</label>
-            <label><input type="checkbox" name="膚況選項" value="雀斑黑色素">雀斑黑色素</label>
-            <label><input type="checkbox" name="膚況選項" value="粉刺痘痘">粉刺痘痘</label>
-            <label><input type="checkbox" name="膚況選項" value="鬆弛、需提升緊緻">鬆弛、需提升緊緻</label>
-            <label><input type="checkbox" name="膚況選項" value="面部紅血絲、敏感">面部紅血絲、敏感</label>
+            <label><input type="checkbox" name="膚況選項" value="油性毛孔">皮膚油、毛孔粗大</label>
+            <label><input type="checkbox" name="膚況選項" value="暗黃">暗黃、膚色不均</label>
+            <label><input type="checkbox" name="膚況選項" value="乾燥">皮膚乾燥缺水</label>
+            <label><input type="checkbox" name="膚況選項" value="斑點">雀斑黑色素</label>
+            <label><input type="checkbox" name="膚況選項" value="痘痘">粉刺痘痘</label>
+            <label><input type="checkbox" name="膚況選項" value="鬆弛">鬆弛、需提升緊緻</label>
+            <label><input type="checkbox" name="膚況選項" value="敏感">面部紅血絲、敏感</label>
           </div>
           <div class="field" style="margin-bottom:0;">
             <label>膚況備註（過敏史、3個月內醫美項目、其他補充）</label>
@@ -971,16 +971,22 @@ async function doSearch(){
     results.innerHTML = `<div class="empty-state"><div class="icon">◇</div>找不到符合的客戶</div>`;
     return;
   }
-  results.innerHTML = res.data.map(c=>`
+  results.innerHTML = res.data.map(c=>{
+    const skinTags = ['油性毛孔','暗黃','乾燥','斑點','痘痘','鬆弛','敏感']
+      .filter(t=>String(c[t]||'').trim()==='✓');
+    const skinNote = String(c['膚況備註']||'').trim();
+    const skinText = skinTags.join('、') + (skinNote?`（${skinNote}）`:'');
+    return `
     <div class="card">
       <div class="card-title">${c['客戶姓名']||''}</div>
       <div class="card-meta">${c['電話']||''}　${c['LINE名稱']?'LINE：'+c['LINE名稱']:''}</div>
       <div>${statusBadge(c['客戶狀態'])}</div>
       <div class="card-meta" style="margin-top:8px;">來源：${c['客戶來源']||'—'}　負責：${c['負責夥伴']||'—'}</div>
-      ${c['膚況']?`<div class="card-meta">膚況：${String(c['膚況']).split('\n').join('、')}</div>`:''}
+      ${skinText?`<div class="card-meta">膚況：${skinText}</div>`:''}
       ${c['備註']?`<div class="card-meta">備註：${c['備註']}</div>`:''}
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 document.getElementById('searchInput').addEventListener('keydown',e=>{
   if(e.key==='Enter') doSearch();
@@ -993,15 +999,15 @@ async function submitCustomer(e){
   const data = {};
   new FormData(form).forEach((v,k)=>data[k]=v);
 
-  // 膚況：勾選項目一項一行，備註放最後一行
+  // 膚況：每個勾選寫入對應欄位（✓），備註獨立一欄；
+  // 另組一份摘要給追蹤紀錄表當基準膚況（客戶資料表無此標題，不會寫入）
   const skinChecks = Array.from(form.querySelectorAll('input[name="膚況選項"]:checked'))
     .map(el=>el.value);
+  skinChecks.forEach(tag=>data[tag]='✓');
   const skinNote = (data['膚況備註']||'').trim();
-  const skinLines = skinChecks.slice();
-  if(skinNote) skinLines.push('備註：'+skinNote);
-  data['膚況'] = skinLines.join('\n');
+  data['膚況備註'] = skinNote;
+  data['膚況摘要'] = skinChecks.join('、') + (skinNote ? `（${skinNote}）` : '');
   delete data['膚況選項'];
-  delete data['膚況備註'];
 
   const track = data['追蹤區分'] || '未選擇';
   const needFollow = track !== '未選擇' && track !== '不需追蹤';

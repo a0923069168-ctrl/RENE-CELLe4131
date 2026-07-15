@@ -334,6 +334,38 @@
   }
   .toast.show{opacity:1;}
 
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(22,38,22,.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:200;
+  }
+  .modal-box{
+    background:var(--surface);
+    border-radius:6px;
+    border-top:4px solid var(--accent);
+    padding:36px 42px 30px;
+    max-width:440px;
+    width:calc(100% - 48px);
+    text-align:center;
+    box-shadow:0 12px 40px rgba(0,0,0,.2);
+    animation:fadeIn .2s ease;
+  }
+  .modal-msg{
+    font-size:16px;
+    line-height:2;
+    color:var(--text-primary);
+    margin-bottom:24px;
+    white-space:pre-line;
+    letter-spacing:1px;
+  }
+  .modal-box button{
+    min-width:120px;
+  }
+
   .config-banner{
     background:#F5E9DB;
     color:var(--status-wait);
@@ -735,6 +767,13 @@
 
 <div id="toast" class="toast"></div>
 
+<div id="modalOverlay" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div id="modalMsg" class="modal-msg"></div>
+    <button class="primary" onclick="closeModal()">確定</button>
+  </div>
+</div>
+
 <script>
 /* ===== 設定區：部署 GAS 後 把網址貼在這裡 ===== */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwEH2QLNFh_816H6uMJI_7pwaOzx2Qbz_7Ygd5rfiNqWQF9a7ZdZt2yGOPtBe8W4yqkJw/exec";
@@ -765,6 +804,14 @@ function showToast(msg){
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+function showModal(msg){
+  document.getElementById('modalMsg').textContent = msg;
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+function closeModal(){
+  document.getElementById('modalOverlay').style.display = 'none';
 }
 
 async function apiGet(params){
@@ -951,7 +998,10 @@ function renderTrackCard(row, catName){
         </div>
         <div class="field">
           <label>下次追蹤日期時間（留空代表照原排程提醒）</label>
-          <input type="datetime-local" id="next-${uid}">
+          <div style="display:flex;gap:10px;">
+            <input type="date" id="nextd-${uid}" style="flex:1;">
+            <select id="nextt-${uid}" style="flex:1;">${timeOptions30()}</select>
+          </div>
         </div>
         <div class="form-actions">
           <button class="secondary" onclick="addFollowUp('${uid}','${due}',false)">新增本次記錄</button>
@@ -966,18 +1016,36 @@ function toggleRow(uid){
   document.getElementById('row-'+uid).classList.toggle('open');
 }
 
+/* 時間下拉：10:00～21:00，每 30 分一格 */
+function timeOptions30(){
+  let html = '<option>未設定</option>';
+  for(let h=10; h<=21; h++){
+    ['00','30'].forEach(m=>{
+      if(h===21 && m==='30') return;
+      html += `<option>${String(h).padStart(2,'0')}:${m}</option>`;
+    });
+  }
+  return html;
+}
+
 async function addFollowUp(uid, due, isDone){
   const cat = document.getElementById('cat-'+uid).value;
   const item = document.getElementById('item-'+uid).value.trim();
   const skin = document.getElementById('skin-'+uid).value.trim();
-  const next = document.getElementById('next-'+uid).value;
+  const nextDate = document.getElementById('nextd-'+uid).value;
+  const nextTime = document.getElementById('nextt-'+uid).value;
+  if(nextDate && (!nextTime || nextTime==='未設定')){
+    showModal('已選擇下次追蹤日期，請一併選擇時間');
+    return;
+  }
+  const next = nextDate ? `${nextDate}T${nextTime}` : '';
 
   if(!cat){
-    showToast('請選擇追蹤類別');
+    showModal('請選擇追蹤類別');
     return;
   }
   if(!item && !skin && !isDone){
-    showToast('請至少填寫一項再送出');
+    showModal('請至少填寫一項再送出');
     return;
   }
 
@@ -1047,12 +1115,12 @@ async function submitCustomer(e){
   const phoneValue = String(data['電話']||'').trim();
   if(!phoneValue) missing.push('電話');
   if(missing.length>0){
-    alert('以下欄位尚未填寫：\n' + missing.join('、'));
+    showModal('以下欄位尚未填寫：\n' + missing.join('、'));
     return;
   }
   // 電話格式驗證：台灣手機 09 開頭共 10 碼
   if(!/^09\d{8}$/.test(phoneValue)){
-    alert('電話格式錯誤：須為 09 開頭共 10 碼的手機號碼\n例如：0912345678');
+    showModal('電話格式錯誤：須為 09 開頭共 10 碼的手機號碼\n例如：0912345678');
     return;
   }
   data['電話'] = phoneValue;
@@ -1091,11 +1159,11 @@ async function submitCustomer(e){
 
   const res = await apiPost({action:'add', sheet:'客戶資料表', data});
   if(res.ok){
-    alert('✅ 資料已送出！');
+    showModal('✅ 資料已送出！');
     form.reset();
     loadNotify();
   } else {
-    alert('❌ 新增失敗：' + (res.error||'請稍後再試'));
+    showModal('❌ 新增失敗：' + (res.error||'請稍後再試'));
   }
 }
 

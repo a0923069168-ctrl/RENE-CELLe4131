@@ -983,6 +983,8 @@ async function doSearch(){
       <div>${statusBadge(c['客戶狀態'])}</div>
       <div class="card-meta" style="margin-top:8px;">來源：${c['客戶來源']||'—'}　負責：${c['負責夥伴']||'—'}</div>
       ${skinText?`<div class="card-meta">膚況：${skinText}</div>`:''}
+      ${c['最近皮膚情況']&&c['最近皮膚情況']!==skinText?`<div class="card-meta">最近膚況：${c['最近皮膚情況']}</div>`:''}
+      ${c['追蹤歷史']?`<div class="card-meta">追蹤歷史：<div style="white-space:pre-line;margin-top:4px;padding-left:10px;border-left:2px solid var(--border);">${c['追蹤歷史']}</div></div>`:''}
       ${c['備註']?`<div class="card-meta">備註：${c['備註']}</div>`:''}
     </div>
   `;
